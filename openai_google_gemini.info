@@ -1,0 +1,12 @@
+[name]
+type = module
+
+dependencies[] = key
+dependencies[] = openai
+
+core = 1.x
+backdrop = 1.x
+version = 1.x-1.0
+description = Use Google Gemini AI models through the OpenAI module API.
+name = OpenAI Google Gemini Provider
+

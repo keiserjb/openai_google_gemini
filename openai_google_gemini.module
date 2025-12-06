@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * @file
+ * Google Gemini AI provider integration for the OpenAI module.
+ *
+ * This module enables using Google Gemini AI models through the
+ * OpenAI module's unified provider interface.
+ */
+
+/**
+ * Implements hook_autoload_info().
+ */
+function openai_google_gemini_autoload_info() {
+  return [
+    'GoogleGeminiAdapter' => 'includes/GoogleGeminiAdapter.php',
+  ];
+}
+
+/**
+ * Implements hook_openai_provider_info().
+ *
+ * Registers Google Gemini as an available AI provider.
+ */
+function openai_google_gemini_openai_provider_info() {
+  return [
+    'google_gemini' => [
+      'label' => t('Google'),
+      'description' => t('Use Google Gemini AI models with multimodal support and advanced reasoning.'),
+      'class' => 'GoogleGeminiAdapter',
+      'website' => 'https://gemini.google.com/',
+      'key_url' => 'https://aistudio.google.com/app/apikeys',
+      'models_url' => 'https://ai.google.dev/models',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_openai_provider_settings_alter().
+ *
+ * Adds Google Gemini-specific settings to the OpenAI module settings form.
+ */
+function openai_google_gemini_openai_provider_settings_alter(&$settings, $context) {
+  // Only add settings if Gemini is the selected provider
+  if ($context['provider'] !== 'google_gemini') {
+    return;
+  }
+
+  $available_keys = function_exists('key_get_key_names_as_options')
+    ? key_get_key_names_as_options()
+    : [];
+
+  $settings['api_key_google_gemini'] = [
+    '#type' => 'key_select',
+    '#title' => t('Google Gemini API Key'),
+    '#default_value' => config_get('openai.settings', 'api_key_google_gemini') ?: '',
+    '#options' => $available_keys,
+    '#key_filters' => ['type' => 'authentication'],
+    '#description' => t('Get your free API key from <a href="https://aistudio.google.com/app/apikeys" target="_blank">Google AI Studio</a>. No credit card required for the free tier.'),
+    '#required' => TRUE,
+    '#weight' => -5,
+  ];
+
+  $settings['gemini_help'] = [
+    '#type' => 'markup',
+    '#markup' => '<div class="description">' .
+      t('<h4>Gemini Models Available</h4>
+      <ul>
+        <li><strong>gemini-2.0-flash</strong> - Latest and fastest model. Recommended for most use cases.</li>
+        <li><strong>gemini-1.5-pro</strong> - Most capable model. Supports up to 1M tokens context. Best for complex reasoning and analysis.</li>
+        <li><strong>gemini-1.5-flash</strong> - Fast and efficient. Good balance of speed and capability.</li>
+      </ul>
+      <p><strong>Free Tier:</strong> Gemini has a generous free tier with rate limits. See pricing page for details.</p>
+      <p><strong>Features:</strong> Supports text, vision (images), audio, and video inputs.</p>
+      <p><a href="https://ai.google.dev/models" target="_blank">Browse all available models and pricing</a></p>') .
+      '</div>',
+    '#weight' => -4,
+  ];
+
+  if (isset($context['form'])) {
+    $context['form']['#submit'][] = 'openai_google_gemini_provider_settings_submit';
+  }
+}
+
+/**
+ * Submit handler for Google Gemini provider settings.
+ */
+function openai_google_gemini_provider_settings_submit($form, &$form_state) {
+  // Any custom Gemini-specific processing can go here
+  // Currently delegated to main openai_settings_form_submit
+}
+
