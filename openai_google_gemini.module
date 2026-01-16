@@ -50,10 +50,14 @@ function openai_google_gemini_openai_provider_settings_alter(&$settings, $contex
     ? key_get_key_names_as_options()
     : [];
 
+  // Use central providers mapping so the default reflects saved provider config.
+  $providers_root = config_get('openai.settings', 'providers') ?: [];
+  $default_key = !empty($providers_root['google_gemini']['api_key']) ? $providers_root['google_gemini']['api_key'] : '';
+
   $settings['api_key_google_gemini'] = [
     '#type' => 'key_select',
     '#title' => t('Google Gemini API Key'),
-    '#default_value' => config_get('openai.settings', 'api_key_google_gemini') ?: '',
+    '#default_value' => $default_key,
     '#options' => $available_keys,
     '#key_filters' => ['type' => 'authentication'],
     '#description' => t('Get your free API key from <a href="https://aistudio.google.com/app/apikeys" target="_blank">Google AI Studio</a>. No credit card required for the free tier.'),
@@ -89,4 +93,3 @@ function openai_google_gemini_provider_settings_submit($form, &$form_state) {
   // Any custom Gemini-specific processing can go here
   // Currently delegated to main openai_settings_form_submit
 }
-

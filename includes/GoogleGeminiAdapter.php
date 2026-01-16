@@ -100,6 +100,27 @@ class GoogleGeminiAdapter implements AIClientInterface {
   }
 
   /**
+   * Get models by their capability.
+   */
+  public function getModelsByCapability($capability): array {
+    $models = $this->getModels();
+    if ($capability === 'text') {
+      return $models;
+    }
+    if ($capability === 'vision') {
+      $vision_models = [];
+      foreach ($models as $id => $label) {
+        // Gemini 1.5 and 2.0 models are multimodal (text/vision)
+        if (preg_match('/gemini-(1\.5|2\.0)/i', $id)) {
+          $vision_models[$id] = $label;
+        }
+      }
+      return $vision_models;
+    }
+    return [];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function chat(string $model, array $messages, $temperature, $max_tokens = 1024, bool $stream_response = FALSE) {
@@ -312,7 +333,7 @@ class GoogleGeminiAdapter implements AIClientInterface {
    * embeddings() helper and returns the first embedding result in the same
    * predictable shape as other adapters (object/data/index).
    */
-  public function embedding(string $input, string $model): array {
+  public function embedding(string $input, string $model, bool $log = TRUE): array {
     try {
       // Reuse the bulk embeddings method with a single-item array.
       $result = $this->embeddings($model, [$input]);
