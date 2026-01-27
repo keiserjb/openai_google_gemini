@@ -22,7 +22,24 @@ class GoogleGeminiAdapter implements AIClientInterface {
   /**
    * Set an API/logger instance for adapter logging.
    *
-   * @param mixed $api An object that may implement recordLog(string $level, string $msg, array $context = [])
+   * The adapter may call a `recordLog` method on the provided object. The
+   * expected signature used by this adapter (particularly in `embedding()`)
+   * is:
+   *
+   *   recordLog(string $type, string $model, array $context, $result, $successFlag, $duration, $error = NULL, $sensitiveFlag)
+   *
+   * - `$type`: a short string describing the log type (e.g. 'embedding').
+   * - `$model`: model identifier used for the request.
+   * - `$context`: associative array of input context (for embeddings this
+   *   typically contains ['input' => $input]).
+   * - `$result`: the returned result payload (or NULL on error).
+   * - `$successFlag`: boolean indicating success (TRUE) or failure (FALSE).
+   * - `$duration`: numeric duration in seconds or milliseconds.
+   * - `$error`: optional error message string when `$successFlag` is FALSE.
+   * - `$sensitiveFlag`: boolean indicating whether the log contains sensitive
+   *   data (TRUE means sensitive and should be treated accordingly).
+   *
+   * @param mixed $api An object implementing `recordLog` as described above.
    * @return $this
    */
   public function setApi($api)
@@ -358,7 +375,7 @@ class GoogleGeminiAdapter implements AIClientInterface {
       // Reuse the bulk embeddings method with a single-item array.
       $result = $this->embeddings($model, [$input]);
       if (!empty($result['data']) && is_array($result['data']) && isset($result['data'][0])) {
-        if (isset($this->api) && method_exists($this->api, 'recordLog')) {
+        if ($this->api !== null && method_exists($this->api, 'recordLog')) {
           $duration = microtime(TRUE) - $start_time;
           $this->api->recordLog('embedding', $model, ['input' => $input], $result, TRUE, $duration, NULL, !$log);
         }
