@@ -334,18 +334,33 @@ class GoogleGeminiAdapter implements AIClientInterface {
    * predictable shape as other adapters (object/data/index).
    */
   public function embedding(string $input, string $model, bool $log = TRUE): array {
+    $start_time = microtime(TRUE);
     try {
       // Reuse the bulk embeddings method with a single-item array.
       $result = $this->embeddings($model, [$input]);
       if (!empty($result['data']) && is_array($result['data']) && isset($result['data'][0])) {
-        return $result['data'][0];
+        if (isset($this->api) && method_exists($this->api, 'recordLog')) {
+          $duration = microtime(TRUE) - $start_time;
+          $this->api->recordLog('embedding', $model, ['input' => $input], $result, TRUE, $duration, NULL, !$log);
+        }
+        // Return only the vector to match the new AIClientInterface::embedding contract
+        return is_array($result['data'][0]) ? ($result['data'][0]['embedding'] ?? []) : [];
       }
-      // Fallback: return empty embedding shape to keep callers predictable.
-      return ['object' => 'embedding', 'embedding' => [], 'index' => 0];
+      return [];
     }
     catch (\Exception $e) {
-      watchdog('openai_google_gemini', 'Embedding error: @error', ['@error' => $e->getMessage()], WATCHDOG_ERROR);
-      return ['data' => [], 'error' => $e->getMessage()];
+      if (isset($this->api) && method_exists($this->api, 'recordLog')) {
+        $duration = microtime(TRUE) - $start_time;
+        $this->api->recordLog('embedding', $model, ['input' => $input], NULL, FALSE, $duration, $e->getMessage(), !$log);
+      }
+      if ($log) {
+        $error_msg = $e->getMessage();
+        // Suppress log if it's a "does not support embeddings" or similar during probing.
+        if (strpos($error_msg, 'does not support embeddings') === FALSE && strpos($error_msg, 'not found') === FALSE) {
+          watchdog('openai_google_gemini', 'Embedding error: @error', ['@error' => $error_msg], WATCHDOG_ERROR);
+        }
+      }
+      return [];
     }
   }
 
