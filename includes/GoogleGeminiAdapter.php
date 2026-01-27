@@ -12,6 +12,25 @@
 
 
 class GoogleGeminiAdapter implements AIClientInterface {
+  /**
+   * API/logger instance used for adapter logging.
+   *
+   * @var mixed|null
+   */
+  protected $api = null;
+
+  /**
+   * Set an API/logger instance for adapter logging.
+   *
+   * @param mixed $api An object that may implement recordLog(string $level, string $msg, array $context = [])
+   * @return $this
+   */
+  public function setApi($api)
+  {
+    $this->api = $api;
+    return $this;
+  }
+
 
   /** @var string */
   protected $apiKey;
