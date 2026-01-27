@@ -42,8 +42,7 @@ class GoogleGeminiAdapter implements AIClientInterface {
    * @param mixed $api An object implementing `recordLog` as described above.
    * @return $this
    */
-  public function setApi($api)
-  {
+  public function setApi($api) {
     $this->api = $api;
     return $this;
   }
